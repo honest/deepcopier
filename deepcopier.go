@@ -1,13 +1,13 @@
 package deepcopier
 
 import (
+	"database/sql"
 	"fmt"
 	"reflect"
 	"strings"
 	"time"
 
-	"github.com/guregu/null"
-	"github.com/lib/pq"
+	"github.com/go-sql-driver/mysql"
 	"github.com/oleiade/reflections"
 )
 
@@ -218,7 +218,8 @@ func (dc *DeepCopier) SetFieldValue(entity interface{}, name string, value refle
 	// Structs
 	if kind == reflect.Struct {
 		switch v := value.Interface().(type) {
-		case time.Time, pq.NullTime, null.String:
+		// case time.Time, null.String, pq.NullTime
+		case time.Time, mysql.NullTime, sql.NullString:
 			if err := reflections.SetField(entity, name, v); err != nil {
 				return err
 			}
@@ -326,9 +327,15 @@ func (dc *DeepCopier) HandleStructField(options *FieldOptions) error {
 	}
 
 	switch v := f.(type) {
-	case pq.NullTime:
+	// case pq.NullTime:
+	// 	if v.Valid {
+	// 		if err := reflections.SetField(dc.Destination, options.DestinationField, &v.Time); err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	case mysql.NullTime:
 		if v.Valid {
-			if err := reflections.SetField(dc.Destination, options.DestinationField, &v.Time); err != nil {
+			if err := reflections.SetField(dc.Destination, options.DestinationField, v); err != nil {
 				return err
 			}
 		}
@@ -336,6 +343,14 @@ func (dc *DeepCopier) HandleStructField(options *FieldOptions) error {
 		if err := reflections.SetField(dc.Destination, options.DestinationField, v); err != nil {
 			return err
 		}
+	case sql.NullString:
+		if err := reflections.SetField(dc.Destination, options.DestinationField, v); err != nil {
+			return err
+		}
+		// case null.String:
+		// 	if err := reflections.SetField(dc.Destination, options.DestinationField, v); err != nil {
+		// 		return err
+		// 	}
 	}
 
 	return nil

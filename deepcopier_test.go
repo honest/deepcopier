@@ -1,10 +1,11 @@
 package deepcopier
 
 import (
+	"database/sql"
 	"testing"
 	"time"
 
-	"github.com/guregu/null"
+	"github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,6 +51,9 @@ func TestCopyTo(t *testing.T) {
 	is.Equal(expectedUserCopy.SuperMethod, userCopy.SuperMethod)
 	is.Equal(expectedUserCopy.StringSlice, userCopy.StringSlice)
 	is.Equal(expectedUserCopy.IntSlice, userCopy.IntSlice)
+	// is.Equal(expectedUserCopy.NullString, userCopy.NullString)
+	is.Equal(expectedUserCopy.SqlNullString, userCopy.SqlNullString)
+	is.Equal(expectedUserCopy.MysqlNullTime, userCopy.MysqlNullTime)
 
 	is.Nil(Copy(user).WithContext(map[string]interface{}{"version": "1"}).To(userCopyExtended))
 
@@ -83,6 +87,9 @@ func TestCopyTo(t *testing.T) {
 	is.Equal(expectedUserCopyExtended.SuperMethod, userCopyExtended.SuperMethod)
 	is.Equal(expectedUserCopyExtended.StringSlice, userCopyExtended.StringSlice)
 	is.Equal(expectedUserCopyExtended.IntSlice, userCopyExtended.IntSlice)
+	// is.Equal(expectedUserCopyExtended.NullString, userCopyExtended.NullString)
+	is.Equal(expectedUserCopyExtended.SqlNullString, userCopyExtended.SqlNullString)
+	is.Equal(expectedUserCopyExtended.MysqlNullTime, userCopyExtended.MysqlNullTime)
 }
 
 func TestCopyFrom(t *testing.T) {
@@ -154,7 +161,9 @@ type User struct {
 	AnUInt64     uint64
 	AStringSlice []string
 	AnIntSlice   []int
-	ANullString  null.String
+	// ANullString    null.String
+	ASqlNullString sql.NullString
+	AMysqlNullTime mysql.NullTime
 }
 
 func NewUser(now time.Time) *User {
@@ -175,7 +184,9 @@ func NewUser(now time.Time) *User {
 		AnUInt64:     uint64(10),
 		AStringSlice: []string{"Chuck", "Norris"},
 		AnIntSlice:   []int{0, 8, 15},
-		ANullString:  null.StringFrom("I'm null"),
+		// ANullString:    null.StringFrom("I'm null"),
+		ASqlNullString: sql.NullString{String: "I'm also null", Valid: true},
+		AMysqlNullTime: mysql.NullTime{Time: NewTestTime(), Valid: true},
 	}
 }
 
@@ -236,35 +247,37 @@ func (u *User) MethodWithContext(context map[string]interface{}) string {
 }
 
 type UserCopy struct {
-	Date              time.Time   `json:"date"`
-	Title             string      `json:"name" deepcopier:"field:Name"`
-	Float32           float32     `json:"a_float32" deepcopier:"field:AFloat32"`
-	Float64           float64     `json:"a_float64" deepcopier:"field:AFloat64"`
-	Int               int         `json:"an_int" deepcopier:"field:AnInt"`
-	Int8              int8        `json:"an_int8" deepcopier:"field:AnInt8"`
-	Int16             int16       `json:"an_int16" deepcopier:"field:AnInt16"`
-	Int32             int32       `json:"an_int32" deepcopier:"field:AnInt32"`
-	Int64             int64       `json:"an_int64" deepcopier:"field:AnInt64"`
-	UInt              uint        `json:"an_uint" deepcopier:"field:AnUInt"`
-	UInt8             uint8       `json:"an_uint8" deepcopier:"field:AnUInt8"`
-	UInt16            uint16      `json:"an_uint16" deepcopier:"field:AnUInt16"`
-	UInt32            uint32      `json:"an_uint32" deepcopier:"field:AnUInt32"`
-	UInt64            uint64      `json:"an_uint64" deepcopier:"field:AnUInt64"`
-	NullString        null.String `json:"a_null_string" deepcopier:"field:ANullString"`
-	StringSlice       []string    `json:"a_string_slice" deepcopier:"field:AStringSlice"`
-	IntSlice          []int       `json:"an_int_slice" deepcopier:"field:AnIntSlice"`
-	IntMethod         int         `json:"int_method"`
-	Int8Method        int8        `json:"int8_method"`
-	Int16Method       int16       `json:"int16_method"`
-	Int32Method       int32       `json:"int32_method"`
-	Int64Method       int64       `json:"int64_method"`
-	UIntMethod        uint        `json:"uint_method"`
-	UInt8Method       uint8       `json:"uint8_method"`
-	UInt16Method      uint16      `json:"uint16_method"`
-	UInt32Method      uint32      `json:"uint32_method"`
-	UInt64Method      uint64      `json:"uint64_method"`
-	MethodWithContext string      `json:"method_with_context" deepcopier:"context"`
-	SuperMethod       string      `json:"super_method" deepcopier:"field:MethodWithDifferentName"`
+	Date    time.Time `json:"date"`
+	Title   string    `json:"name" deepcopier:"field:Name"`
+	Float32 float32   `json:"a_float32" deepcopier:"field:AFloat32"`
+	Float64 float64   `json:"a_float64" deepcopier:"field:AFloat64"`
+	Int     int       `json:"an_int" deepcopier:"field:AnInt"`
+	Int8    int8      `json:"an_int8" deepcopier:"field:AnInt8"`
+	Int16   int16     `json:"an_int16" deepcopier:"field:AnInt16"`
+	Int32   int32     `json:"an_int32" deepcopier:"field:AnInt32"`
+	Int64   int64     `json:"an_int64" deepcopier:"field:AnInt64"`
+	UInt    uint      `json:"an_uint" deepcopier:"field:AnUInt"`
+	UInt8   uint8     `json:"an_uint8" deepcopier:"field:AnUInt8"`
+	UInt16  uint16    `json:"an_uint16" deepcopier:"field:AnUInt16"`
+	UInt32  uint32    `json:"an_uint32" deepcopier:"field:AnUInt32"`
+	UInt64  uint64    `json:"an_uint64" deepcopier:"field:AnUInt64"`
+	// NullString        null.String    `json:"a_null_string" deepcopier:"field:ANullString"`
+	SqlNullString     sql.NullString `deepcopier:"field:ASqlNullString"`
+	MysqlNullTime     mysql.NullTime `deepcopier:"field:AMysqlNullTime"`
+	StringSlice       []string       `json:"a_string_slice" deepcopier:"field:AStringSlice"`
+	IntSlice          []int          `json:"an_int_slice" deepcopier:"field:AnIntSlice"`
+	IntMethod         int            `json:"int_method"`
+	Int8Method        int8           `json:"int8_method"`
+	Int16Method       int16          `json:"int16_method"`
+	Int32Method       int32          `json:"int32_method"`
+	Int64Method       int64          `json:"int64_method"`
+	UIntMethod        uint           `json:"uint_method"`
+	UInt8Method       uint8          `json:"uint8_method"`
+	UInt16Method      uint16         `json:"uint16_method"`
+	UInt32Method      uint32         `json:"uint32_method"`
+	UInt64Method      uint64         `json:"uint64_method"`
+	MethodWithContext string         `json:"method_with_context" deepcopier:"context"`
+	SuperMethod       string         `json:"super_method" deepcopier:"field:MethodWithDifferentName"`
 }
 
 type UserCopyExtended struct {
@@ -273,23 +286,23 @@ type UserCopyExtended struct {
 
 func NewUserCopy(now time.Time) *UserCopy {
 	return &UserCopy{
-		Title:             "Chuck Norris",
-		Date:              now,
-		Float32:           float32(10.0),
-		Float64:           float64(10.0),
-		Int:               int(10),
-		Int8:              int8(10),
-		Int16:             int16(10),
-		Int32:             int32(10),
-		Int64:             int64(10),
-		UInt:              uint(10),
-		UInt8:             uint8(10),
-		UInt16:            uint16(10),
-		UInt32:            uint32(10),
-		UInt64:            uint64(10),
-		StringSlice:       []string{"Chuck", "Norris"},
-		IntSlice:          []int{0, 8, 15},
-		NullString:        null.StringFrom("I'm null"),
+		Title:       "Chuck Norris",
+		Date:        now,
+		Float32:     float32(10.0),
+		Float64:     float64(10.0),
+		Int:         int(10),
+		Int8:        int8(10),
+		Int16:       int16(10),
+		Int32:       int32(10),
+		Int64:       int64(10),
+		UInt:        uint(10),
+		UInt8:       uint8(10),
+		UInt16:      uint16(10),
+		UInt32:      uint32(10),
+		UInt64:      uint64(10),
+		StringSlice: []string{"Chuck", "Norris"},
+		IntSlice:    []int{0, 8, 15},
+		// NullString:        null.StringFrom("I'm null"),
 		IntMethod:         int(10),
 		Int8Method:        int8(10),
 		Int16Method:       int16(10),
@@ -302,6 +315,8 @@ func NewUserCopy(now time.Time) *UserCopy {
 		UInt64Method:      uint64(10),
 		MethodWithContext: "1",
 		SuperMethod:       "hello",
+		SqlNullString:     sql.NullString{String: "I'm also null", Valid: true},
+		MysqlNullTime:     mysql.NullTime{Time: NewTestTime(), Valid: true},
 	}
 }
 
@@ -309,4 +324,9 @@ func NewUserCopyExtended(now time.Time) *UserCopyExtended {
 	return &UserCopyExtended{
 		UserCopy: *NewUserCopy(now),
 	}
+}
+
+func NewTestTime() time.Time {
+	t1, _ := time.Parse(time.RFC3339, "2012-11-01T22:08:41+00:00")
+	return t1
 }
